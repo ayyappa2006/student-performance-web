@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request
 import pickle
+import os
 
 app = Flask(__name__)
 
-# Load model
-model = pickle.load(open('model.pkl','rb'))
+# Correct path for Render
+model_path = os.path.join(os.path.dirname(__file__), 'model.pkl')
+model = pickle.load(open(model_path, 'rb'))
 
 @app.route('/')
 def home():
