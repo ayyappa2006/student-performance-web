@@ -3,8 +3,8 @@
 <head>
     <title>Student Predictor</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
 <div class="container">
@@ -18,28 +18,11 @@
 
     <h2>{{ prediction_text }}</h2>
 
-    <canvas id="chart"></canvas>
+    <h3>Attendance Status: {{ attendance_status }}</h3>
+    <h3>Absent: {{ absent }}%</h3>
+    <h3>Study Feedback: {{ study_msg }}</h3>
+
 </div>
-
-<script>
-    const value = "{{ prediction_text }}";
-
-    if(value){
-        const score = parseFloat(value.split(": ")[1]);
-
-        new Chart(document.getElementById("chart"), {
-            type: 'bar',
-            data: {
-                labels: ['Score'],
-                datasets: [{
-                    label: 'Prediction',
-                    data: [score],
-                    backgroundColor: '#4facfe'
-                }]
-            }
-        });
-    }
-</script>
 
 </body>
 </html>
