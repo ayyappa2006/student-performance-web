@@ -1,28 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Student Predictor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<title>Student Predictor</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-
 <div class="container">
-    <h1>Student Performance Predictor</h1>
 
-    <form action="/predict" method="post">
-        <input type="number" name="study_hours" placeholder="Study Hours" required>
-        <input type="number" name="attendance" placeholder="Attendance %" required>
-        <button type="submit">Predict</button>
-    </form>
+<h1>Student Performance Predictor</h1>
 
-    <h2>{{ prediction_text }}</h2>
+<form action="/predict" method="post">
 
-    <h3>Attendance Status: {{ attendance_status }}</h3>
-    <h3>Absent: {{ absent }}%</h3>
-    <h3>Study Feedback: {{ study_msg }}</h3>
+<select name="university" required>
+<option>Select University</option>
+<option>JNTU</option>
+<option>OU</option>
+<option>ANU</option>
+</select>
+
+<input type="number" name="study_hours" placeholder="Study Hours" required>
+<input type="number" name="attendance" placeholder="Attendance %" required>
+
+<button>Predict</button>
+</form>
+
+<h2>Score: {{ prediction_text }}</h2>
+
+<h3 style="color:{{status_color}}">{{ attendance_status }}</h3>
+<h3>University: {{ university }}</h3>
+<h3>Absent: {{ absent }}%</h3>
+<h3>{{ study_msg }}</h3>
+
+<a href="/history"><button>View History</button></a>
+
+<canvas id="chart"></canvas>
 
 </div>
+
+<script>
+let score = "{{ prediction_text }}";
+if(score){
+new Chart(document.getElementById("chart"), {
+type:'bar',
+data:{
+labels:['Score'],
+datasets:[{
+data:[parseFloat(score)],
+backgroundColor:'#4facfe'
+}]
+}
+});
+}
+</script>
 
 </body>
 </html>
