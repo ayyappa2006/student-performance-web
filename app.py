@@ -1,35 +1,15 @@
 from flask import Flask, render_template, request
-import pickle, os, sqlite3, numpy as np
+import pickle, numpy as np
 
 app = Flask(__name__)
 
-# ---------------- MODEL ----------------
+# Load model
 model = pickle.load(open('model.pkl', 'rb'))
 
-# ---------------- DATABASE ----------------
-def init_db():
-    conn = sqlite3.connect('students.db')
-    conn.execute('''
-    CREATE TABLE IF NOT EXISTS records (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT,
-        university TEXT,
-        study_hours REAL,
-        attendance REAL,
-        score REAL,
-        status TEXT
-    )
-    ''')
-    conn.close()
-
-init_db()
-
-# ---------------- HOME ----------------
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# ---------------- PREDICT ----------------
 @app.route('/predict', methods=['POST'])
 def predict():
 
@@ -38,15 +18,17 @@ def predict():
     study_hours = float(request.form['study_hours'])
     attendance = float(request.form['attendance'])
 
+    # Score (limit 0–100)
     prediction = model.predict(np.array([[study_hours, attendance]]))[0]
+    score = max(0, min(100, round(prediction, 2)))
 
-    # 🎓 UNIVERSITY RULES
+    # University rules
     if university == "Saveetha University":
         min_attendance = 80
     else:
         min_attendance = 75
 
-    # STATUS
+    # Status
     if attendance < min_attendance:
         status = "Not Eligible ❌"
         color = "red"
@@ -57,64 +39,40 @@ def predict():
         status = "Eligible ✅"
         color = "green"
 
-    # ABSENT
-    absent = 100 - attendance
+    # Absent
+    absent = round(100 - attendance, 2)
 
-    # SMART SUGGESTION
+    # Suggestion
     if attendance < min_attendance:
         needed = round(min_attendance - attendance, 2)
-        suggestion = f"Increase attendance by {needed}% to be eligible"
+        suggestion = f"You need {needed}% more attendance"
     else:
-        suggestion = "You are eligible for exams 🎉"
+        suggestion = "You are safe for exams 🎉"
 
-    # CLASSES CALCULATION
+    # Classes needed
     total_classes = 100
     attended = (attendance / 100) * total_classes
     required = (min_attendance / 100) * total_classes
-
     classes_needed = int(required - attended) if attended < required else 0
 
-    # SAVE DB
-    conn = sqlite3.connect('students.db')
-    conn.execute(
-        "INSERT INTO records (email, university, study_hours, attendance, score, status) VALUES (?,?,?,?,?,?)",
-        (email, university, study_hours, attendance, prediction, status)
-    )
-    conn.commit()
-    conn.close()
+    # 🔥 FUTURE PREDICTION FEATURE
+    miss_classes = 3
+    attend_classes = 5
+
+    future_miss = max(0, round(attendance - (miss_classes * 1), 2))
+    future_attend = min(100, round(attendance + (attend_classes * 1), 2))
 
     return render_template('index.html',
-        prediction_text=f"{prediction:.2f}",
-        attendance_status=status,
-        status_color=color,
+        score=score,
+        attendance=attendance,
         absent=absent,
-        university=university,
+        status=status,
+        color=color,
         suggestion=suggestion,
-        classes_needed=classes_needed
+        classes_needed=classes_needed,
+        future_miss=future_miss,
+        future_attend=future_attend
     )
 
-# ---------------- HISTORY ----------------
-@app.route('/history')
-def history():
-    conn = sqlite3.connect('students.db')
-    data = conn.execute("SELECT * FROM records").fetchall()
-    conn.close()
-    return render_template('history.html', records=data)
-
-# ---------------- ADMIN ----------------
-@app.route('/admin')
-def admin():
-    conn = sqlite3.connect('students.db')
-    data = conn.execute("SELECT * FROM records").fetchall()
-    conn.close()
-
-    total = len(data)
-    avg = sum([row[4] for row in data]) / total if total else 0
-
-    return render_template('admin.html',
-                           total=total,
-                           avg=round(avg, 2))
-
-# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)
