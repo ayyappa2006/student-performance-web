@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Smart Student Eligibility System</title>
+<title>Smart Student System</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
@@ -25,48 +23,35 @@
 <option>Saveetha University</option>
 <option>SRM University</option>
 <option>Anna University</option>
-<option>Sathyabama</option>
 </select>
 
 <input type="number" name="study_hours" placeholder="Study Hours" required>
 <input type="number" name="attendance" placeholder="Attendance %" required>
 
-<button>Predict</button>
+<button>Check Eligibility</button>
 
 </form>
 
-<h2>Score: {{ prediction_text }}</h2>
+{% if score %}
 
-<h3 style="color:{{status_color}}">{{ attendance_status }}</h3>
+<h2>Score: {{ score }}/100</h2>
+
+<h3>Attendance: {{ attendance }}%</h3>
+<h3>Absent: {{ absent }}%</h3>
+
+<h3 style="color: {{ color }}">{{ status }}</h3>
 
 <h3>{{ suggestion }}</h3>
 
 <h3>Classes Needed: {{ classes_needed }}</h3>
 
-<h3>Absent: {{ absent }}%</h3>
+<!-- 🔥 FUTURE PREDICTION -->
+<h3>If you miss 3 classes → {{ future_miss }}%</h3>
+<h3>If you attend 5 classes → {{ future_attend }}%</h3>
 
-<a href="/history"><button>History</button></a>
-<a href="/admin"><button>Admin</button></a>
-
-<canvas id="chart"></canvas>
+{% endif %}
 
 </div>
-
-<script>
-let score = "{{ prediction_text }}";
-if(score){
-new Chart(document.getElementById("chart"), {
-type:'bar',
-data:{
-labels:['Score'],
-datasets:[{
-data:[parseFloat(score)],
-backgroundColor:'#4facfe'
-}]
-}
-});
-}
-</script>
 
 </body>
 </html>
