@@ -11,7 +11,7 @@ min-height:100vh;
 .container{
 background:white;
 padding:30px;
-border-radius:12px;
+border-radius:15px;
 width:350px;
 text-align:center;
 box-shadow:0 10px 25px rgba(0,0,0,0.2);
@@ -45,7 +45,11 @@ button:hover{
 background:#007bff;
 }
 
-table{
-margin-top:20px;
-width:100%;
+h2{color:green;}
+h3{color:#333;}
+
+@media (max-width:600px){
+.container{
+width:90%;
+}
 }
