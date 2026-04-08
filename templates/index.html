@@ -14,10 +14,15 @@
 <form action="/predict" method="post">
 
 <select name="university" required>
-<option>Select University</option>
-<option>JNTU</option>
-<option>OU</option>
-<option>ANU</option>
+    <option value="">Select University</option>
+    
+    <option value="VIT">VIT Chennai</option>
+    <option value="Saveetha">Saveetha University</option>
+    <option value="SRM">SRM University</option>
+    <option value="Anna">Anna University</option>
+    <option value="Sathyabama">Sathyabama Institute of Science and Technology</option>
+    <option value="Hindustan">Hindustan Institute of Technology</option>
+    <option value="Loyola">Loyola College</option>
 </select>
 
 <input type="number" name="study_hours" placeholder="Study Hours" required>
