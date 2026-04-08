@@ -29,7 +29,7 @@ init_db()
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
-        if request.form['username']=="admin" and request.form['password']=="1234":
+        if request.form['username']=="sai" and request.form['password']=="0000":
             session['user']='admin'
             return redirect('/')
         else:
