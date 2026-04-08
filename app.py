@@ -13,7 +13,7 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
 
-    email = request.form['email']
+    
     university = request.form['university']
     study_hours = float(request.form['study_hours'])
     attendance = float(request.form['attendance'])
