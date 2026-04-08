@@ -1,94 +1,84 @@
-from flask import Flask, render_template, request, redirect, session
-import pickle
-import os
-import sqlite3
-import numpy as np
+from flask import Flask, render_template, request
+import pickle, os, sqlite3, numpy as np
 
 app = Flask(__name__)
-app.secret_key = "secret123"
 
-# ------------------ MODEL LOAD ------------------
-model_path = os.path.join(os.path.dirname(__file__), 'model.pkl')
-model = pickle.load(open(model_path, 'rb'))
+# ---------------- MODEL ----------------
+model = pickle.load(open('model.pkl', 'rb'))
 
-# ------------------ DATABASE ------------------
-db_path = os.path.join(os.path.dirname(__file__), 'students.db')
-
+# ---------------- DATABASE ----------------
 def init_db():
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect('students.db')
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            university TEXT,
-            study_hours REAL,
-            attendance REAL,
-            score REAL,
-            status TEXT
-        )
+    CREATE TABLE IF NOT EXISTS records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT,
+        university TEXT,
+        study_hours REAL,
+        attendance REAL,
+        score REAL,
+        status TEXT
+    )
     ''')
     conn.close()
 
 init_db()
 
-# ------------------ LOGIN ------------------
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        if request.form['username'] == "sai" and request.form['password'] == "0000":
-            session['user'] = request.form['username']
-            return redirect('/')
-        else:
-            return "Invalid Login ❌"
-    return render_template('login.html')
-
-# ------------------ LOGOUT ------------------
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect('/login')
-
-# ------------------ HOME ------------------
+# ---------------- HOME ----------------
 @app.route('/')
 def home():
-    if 'user' in session:
-        return render_template('index.html')
-    return redirect('/login')
+    return render_template('index.html')
 
-# ------------------ PREDICT ------------------
+# ---------------- PREDICT ----------------
 @app.route('/predict', methods=['POST'])
 def predict():
+
+    email = request.form['email']
     university = request.form['university']
     study_hours = float(request.form['study_hours'])
     attendance = float(request.form['attendance'])
 
     prediction = model.predict(np.array([[study_hours, attendance]]))[0]
 
-    # Attendance rule
-    if attendance < 75:
+    # 🎓 UNIVERSITY RULES
+    if university == "Saveetha University":
+        min_attendance = 80
+    else:
+        min_attendance = 75
+
+    # STATUS
+    if attendance < min_attendance:
         status = "Not Eligible ❌"
         color = "red"
-    elif attendance < 85:
+    elif attendance < (min_attendance + 10):
         status = "Warning ⚠️"
         color = "orange"
     else:
         status = "Eligible ✅"
         color = "green"
 
+    # ABSENT
     absent = 100 - attendance
 
-    # Study feedback
-    if study_hours < 3:
-        study_msg = "Study more 📚"
-    elif study_hours <= 5:
-        study_msg = "Good 👍"
+    # SMART SUGGESTION
+    if attendance < min_attendance:
+        needed = round(min_attendance - attendance, 2)
+        suggestion = f"Increase attendance by {needed}% to be eligible"
     else:
-        study_msg = "Excellent 🔥"
+        suggestion = "You are eligible for exams 🎉"
 
-    # Save to DB
-    conn = sqlite3.connect(db_path)
+    # CLASSES CALCULATION
+    total_classes = 100
+    attended = (attendance / 100) * total_classes
+    required = (min_attendance / 100) * total_classes
+
+    classes_needed = int(required - attended) if attended < required else 0
+
+    # SAVE DB
+    conn = sqlite3.connect('students.db')
     conn.execute(
-        "INSERT INTO records (university, study_hours, attendance, score, status) VALUES (?, ?, ?, ?, ?)",
-        (university, study_hours, attendance, prediction, status)
+        "INSERT INTO records (email, university, study_hours, attendance, score, status) VALUES (?,?,?,?,?,?)",
+        (email, university, study_hours, attendance, prediction, status)
     )
     conn.commit()
     conn.close()
@@ -98,32 +88,33 @@ def predict():
         attendance_status=status,
         status_color=color,
         absent=absent,
-        study_msg=study_msg,
-        university=university
+        university=university,
+        suggestion=suggestion,
+        classes_needed=classes_needed
     )
 
-# ------------------ HISTORY ------------------
+# ---------------- HISTORY ----------------
 @app.route('/history')
 def history():
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect('students.db')
     data = conn.execute("SELECT * FROM records").fetchall()
     conn.close()
     return render_template('history.html', records=data)
 
-# ------------------ ADMIN ------------------
+# ---------------- ADMIN ----------------
 @app.route('/admin')
 def admin():
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect('students.db')
     data = conn.execute("SELECT * FROM records").fetchall()
     conn.close()
 
     total = len(data)
-    avg = sum([row[3] for row in data]) / total if total else 0
+    avg = sum([row[4] for row in data]) / total if total else 0
 
     return render_template('admin.html',
                            total=total,
                            avg=round(avg, 2))
 
-# ------------------ RUN ------------------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)
